@@ -79,8 +79,8 @@ func generate_mesh() -> void:
 	display_noise_map(height_map)
 
 # Generate a 2D noise map
-func generate_noise_map() -> PackedFloat32Array:
-	var noise_map = PackedFloat32Array()
+func generate_noise_map() -> Array:
+	var noise_map: Array = []
 	
 	# Configure FastNoiseLite
 	if seed > 0:
@@ -95,29 +95,27 @@ func generate_noise_map() -> PackedFloat32Array:
 	noise.set_fractal_gain(persistance)
 	
 	for x in range(map_size):
+		var row: PackedFloat32Array = PackedFloat32Array()
 		for y in range(map_size):
 			
 			var sampleX: float = float(x) / noise_scale
 			var sampleY: float = float(y) / noise_scale
 			
 			var height = noise.get_noise_2d(sampleX, sampleY)
-			#if normalize:
-				## Normalize the height value from [-1, 1] to [0, 1]
-				#height = (height + 1.0) * 0.5
-			noise_map.append(height)
+			if normalize:
+				# Normalize the height value from [-1, 1] to [0, 1]
+				height = (height + 1.0) * 0.5
+			row.append(height)
+		noise_map.append(row)
 	
-	#print(noise_map)
 	return noise_map
 
-func display_noise_map(noise_map: PackedFloat32Array):
+func display_noise_map(noise_map: Array):
 	var img = Image.create(map_size, map_size, false, Image.FORMAT_RGB8)
 	
 	for x in range(map_size):
 		for y in range(map_size):
-			var height = noise_map[x + y * map_size]
-			if normalize:
-				# Normalize the height value from [-1, 1] to [0, 1]
-				height = (height + 1.0) * 0.5
+			var height = noise_map[x][y]
 			
 			var color = Color.BLACK.lerp(Color.WHITE, height)
 			if apply_terrain:
@@ -125,7 +123,6 @@ func display_noise_map(noise_map: PackedFloat32Array):
 			#var color = Color(adjusted_value, adjusted_value, adjusted_value)
 			
 			img.set_pixel(x, y, color)
-	#print(color_map)
 	img.generate_mipmaps()
 
 	# Create an ImageTexture and display it in a TextureRect
